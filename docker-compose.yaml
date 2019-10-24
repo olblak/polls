@@ -1,0 +1,24 @@
+version: '3'
+services:
+    api:
+        image: olblak/polls:latest
+        depends_on:
+          - db
+        ports:
+            - 80:80
+        environment:
+            - DATABASE_URL="postgres://poll:pass@db:5432/poll?sslmode=disable"
+    db:
+        image: postgres:12
+        ports:
+            - 5432:5432
+        environment:
+            - POSTGRES_PASSWORD=pass
+            - POSTGRES_USER=poll
+            - POSTGRES_DB=poll
+            
+    ldap:
+        image: jenkinsciinfra/mock-ldap:latest
+        ports:
+          - 389:389
+
