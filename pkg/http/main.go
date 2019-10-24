@@ -69,7 +69,7 @@ func participantsPostHandler(w http.ResponseWriter, r *http.Request) {
 		seniorAccounts := []map[string]string{{}}
 		//newAccounts := []map[string]string{{}}
 
-		seniorAccounts, _ = ldap.Users("2019/09/01 00:00:00", "all")
+		seniorAccounts, _ = ldap.Users(seniorityCriteriaDate, group)
 		polls.CreateParticipants(poll, seniorAccounts)
 	}
 }
