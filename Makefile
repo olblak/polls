@@ -4,10 +4,10 @@ IMAGE='olblak/polls'
 TAG = $(shell git rev-parse HEAD | cut -c1-6)
 
 docker_build:
-	docker build -t ${IMAGE}:${TAG} .
+	docker build -t ${IMAGE}:latest -t ${IMAGE}:${TAG} .
 
 docker_publish:
-	docker push ${IMAGE}:${TAG}
+	docker push ${IMAGE}:${TAG} ${IMAGE}:latest
 
 run:
 	bash -c "source sandbox.env && go run main.go"
