@@ -26,5 +26,6 @@ LABEL \
 RUN apk --no-cache add ca-certificates
 
 COPY --from=0 /go/bin/polls /polls
+COPY --from=0 /go/src/app/migrations /migrations
 
 ENTRYPOINT ["./polls"]
