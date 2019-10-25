@@ -4,7 +4,7 @@ import (
 	"github.com/olblak/polls/pkg/db"
 	"github.com/olblak/polls/pkg/http"
 	"os"
-	"string"
+	"strings"
 )
 
 func main() {
