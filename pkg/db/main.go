@@ -21,7 +21,7 @@ var (
 )
 
 func RunDatabaseMigration() {
-	fmt.Println(Database_url)
+	log.Printf("Running database migration on %v\n", Database_url)
 	db, err := sql.Open("postgres", Database_url)
 	defer db.Close()
 
