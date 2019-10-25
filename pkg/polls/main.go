@@ -108,6 +108,7 @@ func Participants(poll string) []map[string]string {
 // CreateParticipants generate a list of all participants from a specific ldap group and then insert it
 // inside the database
 func CreateParticipants(poll string, participants []map[string]string) {
+	values := ""
 	log.Printf("Create %v participants for poll number: $%v\n", len(participants), poll)
 
 	db, err := sql.Open("postgres", db.Database_url)
@@ -118,6 +119,13 @@ func CreateParticipants(poll string, participants []map[string]string) {
 		log.Printf("unable to use data source name: %v\n", err)
 	}
 
+	tx, err := db.Begin()
+	defer tx.Rollback() // The rollback will be ignored if the tx has been committed later in the function.
+
+	if err != nil {
+		log.Println(err)
+	}
+
 	for _, participant := range participants {
 
 		if isParticipant(participant["mail"], poll) {
@@ -125,32 +133,41 @@ func CreateParticipants(poll string, participants []map[string]string) {
 			continue
 		}
 
-		log.Println(participant["name"])
-		tx, err := db.Begin()
-		if err != nil {
-			log.Println(err)
+		if values != "" {
+			values = values + ","
 		}
 
-		stmt, err := tx.Prepare("INSERT INTO participate (account, mail, poll, participate) VALUES ($1, $2,$3,'false')")
-
-		defer stmt.Close()
-
-		result, err := stmt.Exec(
+		values = values + fmt.Sprintf(
+			"('%v','%v','%v','false')",
 			participant["ldap_account"],
 			participant["mail"],
 			poll)
-
-		if err != nil {
-			log.Println(err)
-		}
-
-		if _, err = result.RowsAffected(); err != nil {
-			log.Println(err)
-		}
-
-		tx.Commit()
-		log.Printf("%v was added to the participants invitation list", participant["mail"])
 	}
+
+	if values == "" {
+		return
+	}
+
+	query := fmt.Sprintf("INSERT INTO participate (account, mail, poll, participate) VALUES %v", values)
+
+	log.Printf(query)
+
+	stmt, err := tx.Prepare(query)
+
+	defer stmt.Close()
+
+	result, err := stmt.Exec()
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	if _, err = result.RowsAffected(); err != nil {
+		log.Println(err)
+	}
+
+	tx.Commit()
+	log.Printf("Inviting %v Participants for poll: %v ", len(participants), poll)
 }
 
 // SetParticipation will confirm user participation for a specific poll
