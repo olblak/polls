@@ -4,12 +4,17 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/olblak/polls/pkg/ldap"
 	"github.com/olblak/polls/pkg/polls"
-	"io/ioutil"
 	"log"
 	"net/http"
 )
 
 func participateHandler(w http.ResponseWriter, r *http.Request) {
+
+	var p polls.Poll
+
+	p.OpenDatabaseConnection()
+	defer p.CloseDatabaseConnection()
+
 	// Read file
 	email := r.FormValue("email")
 	token := r.FormValue("token")
@@ -30,11 +35,16 @@ func participateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	polls.SetParticipation("true", email, token, poll)
+	p.SetParticipation("true", email, token, poll)
 	log.Printf("Participation Request received for %v\n", email)
 }
 
 func participantsGetHandler(w http.ResponseWriter, r *http.Request) {
+
+	var p polls.Poll
+
+	p.OpenDatabaseConnection()
+	defer p.CloseDatabaseConnection()
 
 	poll := r.FormValue("poll")
 
@@ -42,12 +52,17 @@ func participantsGetHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Poll parameter is empty")
 	} else {
 		log.Printf("List All participants for poll: %v\n", poll)
-		log.Println(polls.Participants(poll))
+		log.Println(p.Participants(poll))
 	}
 
 }
 
 func participantsPostHandler(w http.ResponseWriter, r *http.Request) {
+
+	var p polls.Poll
+
+	p.OpenDatabaseConnection()
+	defer p.CloseDatabaseConnection()
 
 	poll := r.FormValue("poll")
 	group := r.FormValue("group")
@@ -70,22 +85,8 @@ func participantsPostHandler(w http.ResponseWriter, r *http.Request) {
 		//newAccounts := []map[string]string{{}}
 
 		seniorAccounts, _ = ldap.Users(seniorityCriteriaDate, group)
-		polls.CreateParticipants(poll, seniorAccounts)
+		p.CreateParticipants(poll, seniorAccounts)
 	}
-}
-
-func accountDeletionHandler(w http.ResponseWriter, r *http.Request) {
-	// Read file
-	log.Println("Request received")
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("Error reading body: %v", err)
-		http.Error(w, "can't read body", http.StatusBadRequest)
-		return
-	}
-	log.Println(body)
-
-	// Do Something
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +98,6 @@ func makeRouter() *mux.Router {
 	router.HandleFunc("/participate", participateHandler).Methods("GET")
 	router.HandleFunc("/participants", participantsGetHandler).Methods("GET")
 	router.HandleFunc("/participants", participantsPostHandler).Methods("POST")
-	router.HandleFunc("/account/delete", accountDeletionHandler).Methods("GET")
 	router.HandleFunc("/status", statusHandler)
 	return router
 }
