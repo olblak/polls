@@ -15,6 +15,8 @@ import (
 // then return true or false
 func isTokenValid(mail, token, poll string) bool {
 	db, err := sql.Open("postgres", db.Database_url)
+	defer db.Close()
+
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
 		// another initialization error.
@@ -45,6 +47,8 @@ func isTokenValid(mail, token, poll string) bool {
 // isParticipant check if a specific email address has been registered for a specific poll
 func isParticipant(mail, poll string) bool {
 	db, err := sql.Open("postgres", db.Database_url)
+	defer db.Close()
+
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
 		// another initialization error.
@@ -77,6 +81,8 @@ func Participants(poll string) []map[string]string {
 	var voters []map[string]string
 
 	db, err := sql.Open("postgres", db.Database_url)
+	defer db.Close()
+
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
 		// another initialization error.
