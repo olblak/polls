@@ -101,64 +101,60 @@ func (p *Poll) Participants(poll string) []map[string]string {
 		voters = append(voters, map[string]string{"mail": mail, "token": token, "participate": participate})
 	}
 
+	// TODO export csv cn,mail,token,poll
+
 	return voters
 }
 
 // CreateParticipants generate a list of all participants from a specific ldap group and then insert it
 // inside the database
 func (p *Poll) CreateParticipants(poll string, participants []map[string]string) {
-	values := ""
+	//values := ""
 	log.Printf("Create %v participants for poll number: %v\n", len(participants), poll)
 
-	tx, err := p.db.Begin()
-	defer tx.Rollback() // The rollback will be ignored if the tx has been committed later in the function.
-
-	if err != nil {
-		log.Println(err)
-	}
-
 	for _, participant := range participants {
+
+		if len(participant["mail"]) > 50 {
+			log.Printf("Wrong email: %v\n", participant["mail"])
+			continue
+		}
+
+		if len(participant["account"]) > 50 {
+			log.Printf("Wrong account: %v\n", participant["mail"])
+			continue
+		}
 
 		if p.isParticipant(participant["mail"], poll) {
 			log.Printf("%v is already in the participants invitation list", participant["mail"])
 			continue
 		}
 
-		if values != "" {
-			values = values + ","
+		tx, err := p.db.Begin()
+		defer tx.Rollback() // The rollback will be ignored if the tx has been committed later in the function.
+
+		if err != nil {
+			log.Println(err)
 		}
 
-		values = values + fmt.Sprintf(
-			"('%v','%v','%v','false')",
+		stmt, err := tx.Prepare("INSERT INTO participate (account, mail, poll, participate) VALUES ($1,$2,$3,'false')")
+		defer stmt.Close()
+
+		result, err := stmt.Exec(
 			participant["ldap_account"],
 			participant["mail"],
 			poll)
+
+		if err != nil {
+			log.Println(err)
+		}
+
+		if _, err = result.RowsAffected(); err != nil {
+			log.Println(err)
+		}
+
+		tx.Commit()
+
 	}
-
-	if values == "" {
-		return
-	}
-
-	query := fmt.Sprintf("INSERT INTO participate (account, mail, poll, participate) VALUES %v", values)
-
-	log.Printf(query)
-
-	stmt, err := tx.Prepare(query)
-
-	defer stmt.Close()
-
-	result, err := stmt.Exec()
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if _, err = result.RowsAffected(); err != nil {
-		log.Println(err)
-	}
-
-	tx.Commit()
-	log.Printf("Inviting %v Participants for poll: %v ", len(participants), poll)
 }
 
 // SetParticipation will confirm user participation for a specific poll
