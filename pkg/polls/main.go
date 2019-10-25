@@ -6,8 +6,6 @@ import (
 
 	"database/sql"
 
-	"strconv"
-
 	"github.com/olblak/polls/pkg/db"
 )
 
@@ -64,15 +62,18 @@ func isParticipant(mail, poll string) bool {
 
 	var id string
 
-	if err := rows.Scan(&id); err != nil {
-		log.Println(err)
-	}
+	err = rows.Scan(&id)
 
-	if i, _ := strconv.Atoi(id); i > 0 {
+	switch {
+	case err == sql.ErrNoRows:
+		return false
+	case err != nil:
+		log.Println("Something went wrong")
+		return false
+	default:
 		return true
 	}
 
-	return false
 }
 
 // Participants return a list of every participant who registered for a specific poll
@@ -115,7 +116,7 @@ func Participants(poll string) []map[string]string {
 // inside the database
 func CreateParticipants(poll string, participants []map[string]string) {
 	values := ""
-	log.Printf("Create %v participants for poll number: $%v\n", len(participants), poll)
+	log.Printf("Create %v participants for poll number: %v\n", len(participants), poll)
 
 	db, err := sql.Open("postgres", db.Database_url)
 	defer db.Close()
