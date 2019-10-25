@@ -18,6 +18,9 @@ func (p *Poll) OpenDatabaseConnection() {
 
 	p.db, err = sql.Open("postgres", db.Database_url)
 
+	p.db.SetMaxIdleConns(100)
+	p.db.SetMaxOpenConns(100)
+
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
 		// another initialization error.
