@@ -29,14 +29,14 @@ func Users(seniorityCriteriaDate, memberOfGroup string) (seniorAccounts, newAcco
 	l, err := ldap.DialURL(fmt.Sprintf("%v://%s:%v", protocol, url, port))
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	defer l.Close()
 
 	err = l.Bind(bindUsername, bindPassword)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	searchRequest := ldap.NewSearchRequest(
@@ -53,11 +53,11 @@ func Users(seniorityCriteriaDate, memberOfGroup string) (seniorAccounts, newAcco
 
 	sr, err := l.Search(searchRequest)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	if len(sr.Entries) != 1 {
-		log.Fatalln("Something went wrong with the group search:", memberOfGroup)
+		log.Println("Something went wrong with the group search:", memberOfGroup)
 	}
 
 	for id, member := range sr.Entries[0].Attributes[0].Values {
