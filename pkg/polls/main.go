@@ -65,7 +65,7 @@ func (p *Poll) isParticipant(mail, poll string) bool {
 	case err == sql.ErrNoRows:
 		return false
 	case err != nil:
-		log.Println("Something went wrong")
+		log.Println(err)
 		return false
 	default:
 		return true
