@@ -10,7 +10,9 @@ import (
 )
 
 const (
-	ldapDateLayout string = "2006/01/02 15:04:05"
+	ldapDateLayout      string = "2006/01/02 15:04:05"
+	ldapSearchTimeLimit int    = 60 // Limit of time in second, for a ldap research
+	ldapSearchSizeLimit int    = 0  // Limit of result return for a search where 0 means no limit
 )
 
 var (
@@ -39,7 +41,11 @@ func Users(seniorityCriteriaDate, memberOfGroup string) (seniorAccounts, newAcco
 
 	searchRequest := ldap.NewSearchRequest(
 		groupBaseDN,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		ldap.ScopeWholeSubtree,
+		ldap.NeverDerefAliases,
+		ldapSearchSizeLimit,
+		ldapSearchTimeLimit,
+		false,
 		fmt.Sprintf("(&(objectClass=groupOfNames)(cn=%s))", memberOfGroup),
 		[]string{"member"},
 		nil,
@@ -60,7 +66,11 @@ func Users(seniorityCriteriaDate, memberOfGroup string) (seniorAccounts, newAcco
 
 		searchRequest = ldap.NewSearchRequest(
 			member,
-			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 1, false,
+			ldap.ScopeWholeSubtree,
+			ldap.NeverDerefAliases,
+			ldapSearchSizeLimit,
+			ldapSearchTimeLimit,
+			false,
 			"(&(objectClass=inetOrgPerson))",
 			[]string{"cn", "mail", "carLicense", "employeeNumber"},
 			nil,
