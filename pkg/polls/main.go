@@ -106,6 +106,34 @@ func (p *Poll) Participants(poll string) []map[string]string {
 	return voters
 }
 
+// Participants return a list of every participant who registered for a specific poll
+func (p *Poll) ParticipantsAsCSV(poll string) [][]string {
+
+	voters := [][]string{{"mail", "token", "participate"}}
+
+	query := fmt.Sprintf("SELECT mail,token, participate FROM participate WHERE poll = '%v'", poll)
+
+	rows, err := p.db.Query(query)
+	if err != nil {
+		log.Println(err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var mail string
+		var token string
+		var participate string
+
+		if err := rows.Scan(&mail, &token, &participate); err != nil {
+			log.Println(err)
+		}
+		voters = append(voters, []string{mail, token, participate})
+	}
+
+	return voters
+}
+
 // CreateParticipants generate a list of all participants from a specific ldap group and then insert it
 // inside the database
 func (p *Poll) CreateParticipants(poll string, participants []map[string]string) {
