@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/csv"
 	"github.com/gorilla/mux"
 	"github.com/olblak/polls/pkg/ldap"
 	"github.com/olblak/polls/pkg/polls"
@@ -52,7 +53,17 @@ func participantsGetHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Poll parameter is empty")
 	} else {
 		log.Printf("List All participants for poll: %v\n", poll)
-		log.Println(p.Participants(poll))
+		log.Println(p.ParticipantsAsCSV(poll))
+
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", "attachment;filename=participants.csv")
+
+		csv := csv.NewWriter(w)
+		csv.WriteAll(p.ParticipantsAsCSV(poll))
+		if err := csv.Error(); err != nil {
+			log.Println("error writing csv:", err)
+		}
+
 	}
 
 }
