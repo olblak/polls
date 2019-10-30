@@ -1,13 +1,14 @@
 .PHONY: build run psql publish
 
-IMAGE='olblak/polls'
+IMAGE=olblak/polls
 TAG = $(shell git rev-parse HEAD | cut -c1-6)
 
 docker_build:
 	docker build -t ${IMAGE}:latest -t ${IMAGE}:${TAG} .
 
 docker_publish:
-	docker push ${IMAGE}:${TAG} ${IMAGE}:latest
+	docker push ${IMAGE}:${TAG}
+	docker push ${IMAGE}:latest
 
 run:
 	bash -c "source sandbox.env && go run main.go"
