@@ -2,19 +2,19 @@ package http
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/olblak/polls/pkg/ldap"
 	"github.com/olblak/polls/pkg/polls"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func participateHandler(w http.ResponseWriter, r *http.Request) {
 
-	var p polls.Poll
-
-	p.OpenDatabaseConnection()
-	defer p.CloseDatabaseConnection()
+	results := map[string]string{"confirmed": "false"}
+	required_data := true
 
 	// Read file
 	email := r.FormValue("email")
@@ -23,20 +23,47 @@ func participateHandler(w http.ResponseWriter, r *http.Request) {
 
 	if email == "" {
 		log.Printf("Missing 'email' Parameter")
-		return
+		required_data = false
 	}
 
 	if token == "" {
 		log.Printf("Missing 'token' Parameter for %v", email)
-		return
+		required_data = false
 	}
 
 	if poll == "" {
 		log.Printf("Missing 'poll' Parameter for %v", email)
+		required_data = false
+	}
+
+	if required_data == true {
+		var p polls.Poll
+
+		p.OpenDatabaseConnection()
+		defer p.CloseDatabaseConnection()
+
+		isConfirmed := p.IsParticipantConfirmed(email, poll)
+
+		if !isConfirmed {
+			p.SetParticipation("true", email, token, poll)
+		}
+		// For now, we test a second time to be sure that the db is correct
+		isConfirmed = p.IsParticipantConfirmed(email, poll)
+
+		results["confirmed"] = strconv.FormatBool(isConfirmed)
+	} else {
+		results["confirmed"] = strconv.FormatBool(required_data)
+	}
+
+	js, err := json.Marshal(results)
+
+	w.Write(js)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	p.SetParticipation("true", email, token, poll)
 	log.Printf("Participation Request received for %v\n", email)
 }
 
@@ -106,10 +133,10 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 
 func makeRouter() *mux.Router {
 	router := mux.NewRouter()
-	router.HandleFunc("/participate", participateHandler).Methods("GET")
-	router.HandleFunc("/participants", participantsGetHandler).Methods("GET")
-	router.HandleFunc("/participants", participantsPostHandler).Methods("POST")
-	router.HandleFunc("/status", statusHandler)
+	router.HandleFunc("/api/participate", participateHandler).Methods("GET")
+	router.HandleFunc("/api/participants", participantsGetHandler).Methods("GET")
+	router.HandleFunc("/api/participants", participantsPostHandler).Methods("POST")
+	router.HandleFunc("/api/status", statusHandler)
 	return router
 }
 
