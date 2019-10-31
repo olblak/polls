@@ -3,6 +3,7 @@ package polls
 import (
 	"fmt"
 	"log"
+	"strconv"
 
 	"database/sql"
 
@@ -53,8 +54,8 @@ func (p *Poll) isTokenValid(mail, token, poll string) bool {
 	return false
 }
 
-// isParticipant check if a specific email address has been registered for a specific poll
-func (p *Poll) isParticipant(mail, poll string) bool {
+// IsParticipant check if a specific email address has been registered for a specific poll
+func (p *Poll) IsParticipant(mail, poll string) bool {
 
 	query := fmt.Sprintf("SELECT id FROM participate WHERE mail = '%v' AND poll = '%v'", mail, poll)
 
@@ -72,6 +73,33 @@ func (p *Poll) isParticipant(mail, poll string) bool {
 		return false
 	default:
 		return true
+	}
+
+}
+
+// IsParticipantConfirmed check if a specific email address has been confirmed for a specific poll
+func (p *Poll) IsParticipantConfirmed(mail, poll string) bool {
+
+	query := fmt.Sprintf("SELECT participate FROM participate WHERE mail = '%v' AND poll = '%v'", mail, poll)
+
+	rows := p.db.QueryRow(query)
+
+	var participate string
+
+	err := rows.Scan(&participate)
+
+	switch {
+	case err == sql.ErrNoRows:
+		return false
+	case err != nil:
+		log.Println(err)
+		return false
+	default:
+		value, err := strconv.ParseBool(participate)
+		if err != nil {
+			log.Println(err)
+		}
+		return value
 	}
 
 }
@@ -152,7 +180,7 @@ func (p *Poll) CreateParticipants(poll string, participants []map[string]string)
 			continue
 		}
 
-		if p.isParticipant(participant["mail"], poll) {
+		if p.IsParticipant(participant["mail"], poll) {
 			log.Printf("%v is already in the participants invitation list", participant["mail"])
 			continue
 		}
@@ -201,6 +229,7 @@ func (p *Poll) SetParticipation(value, email, token, poll string) bool {
 
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 
 	defer stmt.Close()
@@ -209,10 +238,12 @@ func (p *Poll) SetParticipation(value, email, token, poll string) bool {
 
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 
 	if _, err = result.RowsAffected(); err != nil {
 		log.Println(err)
+		return false
 	}
 
 	tx.Commit()
