@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"database/sql"
 
@@ -196,8 +197,8 @@ func (p *Poll) CreateParticipants(poll string, participants []map[string]string)
 		defer stmt.Close()
 
 		result, err := stmt.Exec(
-			participant["ldap_account"],
-			participant["mail"],
+			strings.ToLower(participant["ldap_account"]),
+			strings.ToLower(participant["mail"]),
 			poll)
 
 		if err != nil {
@@ -234,7 +235,10 @@ func (p *Poll) SetParticipation(value, email, token, poll string) bool {
 
 	defer stmt.Close()
 
-	result, err := stmt.Exec(value, email, poll)
+	result, err := stmt.Exec(
+		strings.ToLower(value),
+		strings.ToLower(email),
+		strings.ToLower(poll))
 
 	if err != nil {
 		log.Println(err)
